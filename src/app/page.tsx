@@ -13,6 +13,8 @@ export default function Home() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualText, setManualText] = useState('');
   const [manualAuthor, setManualAuthor] = useState('');
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualType, setManualType] = useState('Newsletter');
   
   const [selectedBriefs, setSelectedBriefs] = useState<(number | string)[]>([]);
   const [draft, setDraft] = useState('');
@@ -145,7 +147,8 @@ export default function Home() {
       id: `manual_${Date.now()}`,
       isManual: true,
       source: manualAuthor || 'Manual Entry',
-      title: `Manual Post - ${new Date().toLocaleDateString()}`,
+      title: manualTitle || `Manual ${manualType} - ${new Date().toLocaleDateString()}`,
+      type: manualType,
       summary: manualText.substring(0, 200) + '...',
       originalText: manualText,
       dateAdded: new Date().toLocaleString()
@@ -153,6 +156,8 @@ export default function Home() {
     setManualPosts([newPost, ...manualPosts]);
     setManualText('');
     setManualAuthor('');
+    setManualTitle('');
+    setManualType('Newsletter');
     setShowManualInput(false);
   };
 
@@ -392,6 +397,25 @@ export default function Home() {
                     <div className="flex justify-between items-center">
                       <h3 className="font-medium text-sm text-slate-700">Add Manual Post</h3>
                       <button onClick={() => setShowManualInput(false)} className="text-slate-400 hover:text-red-500">✕</button>
+                    </div>
+                    <div className="flex gap-2">
+                      <select 
+                        value={manualType}
+                        onChange={(e) => setManualType(e.target.value)}
+                        className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="Newsletter">Newsletter</option>
+                        <option value="LinkedIn Post">LinkedIn Post</option>
+                        <option value="Blog Post">Blog Post</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <input 
+                        type="text" 
+                        placeholder="Title (e.g. Health Tech #4)"
+                        value={manualTitle}
+                        onChange={(e) => setManualTitle(e.target.value)}
+                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
                     </div>
                     <input 
                       type="text" 
