@@ -40,6 +40,8 @@ export default function Home() {
         }
       } catch (e) {
         console.error("Failed to fetch sources from DB", e);
+      } finally {
+        setIsLoaded(true); // Only set isLoaded to true AFTER the initial DB load is completely finished!
       }
     };
     initSources();
@@ -56,7 +58,6 @@ export default function Home() {
     } else {
       setTargetProfile('https://www.linkedin.com/in/parul-aggarwal-833bbb170/');
     }
-    setIsLoaded(true);
   }, []);
 
   useEffect(() => {
