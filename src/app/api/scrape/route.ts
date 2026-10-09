@@ -21,10 +21,16 @@ export async function POST(req: Request) {
     let maxPostsToScrape = 1;
 
     for (const t of targets) {
-      if (t.url.includes('/newsletters/') || t.url.includes('/pulse/') || t.url.includes('/posts/')) {
+      let finalUrl = t.url.trim();
+      // Auto-fix URLs that are missing the protocol
+      if (!finalUrl.startsWith('http')) {
+        finalUrl = 'https://www.' + finalUrl.replace(/^www\./, '');
+      }
+
+      if (finalUrl.includes('/newsletters/') || finalUrl.includes('/pulse/') || finalUrl.includes('/posts/')) {
         throw new Error(`Direct Newsletter/Post links are not supported by this scraper. Please paste the Author's Profile URL (linkedin.com/in/...) instead to scrape their recent posts!`);
       }
-      targetUrls.push(t.url);
+      targetUrls.push(finalUrl);
       
       // Determine how many posts to scrape based on user selection
       if (t.scrapeCount === '3') maxPostsToScrape = Math.max(maxPostsToScrape, 3);
