@@ -21,10 +21,10 @@ export async function POST(req: Request) {
     let userPrompt = '';
 
     if (generateType === 'summary') {
-       systemPrompt = `You are an expert Content Analyst. Your goal is to synthesize the provided briefs into a clear, structured summary.`;
+       systemPrompt = `You are an expert Content Analyst. Your goal is to synthesize the provided briefs into a clear, structured summary. \n\nIMPORTANT: Output the summary in clean, plain text formatting. Do NOT use markdown tables, HTML tags (like <br>), or complex markdown. Use standard paragraphs, newlines, and dash (-) or asterisk (*) for bullet points so it reads perfectly in a standard raw text editor.`;
        userPrompt = `Please summarize the following topics. Pull out the key themes, insights, and potential angles that could be useful for writing a ${contentType} later:\n\n${briefText}`;
     } else {
-       systemPrompt = `You are an expert Ghostwriter and Social Media Strategist. Your goal is to write highly engaging content based on the provided brief(s).\n\nIMPORTANT INSTRUCTIONS:\n- You are ghostwriting AS the owner of this LinkedIn Profile URL: ${targetProfile}. The content must sound like it is coming directly FROM them, written in the first person ("I", "we").\n- The content type you must generate is: ${contentType}.\n- Structure the content specifically for the ${contentType} format to maximize reach and algorithm push.\n- Use formatting like bullet points or emojis where appropriate. Keep it engaging and professional.`;
+       systemPrompt = `You are an expert Ghostwriter and Social Media Strategist. Your goal is to write highly engaging content based on the provided brief(s).\n\nIMPORTANT INSTRUCTIONS:\n- You are ghostwriting AS the owner of this LinkedIn Profile URL: ${targetProfile}. The content must sound like it is coming directly FROM them, written in the first person ("I", "we").\n- The content type you must generate is: ${contentType}.\n- Structure the content specifically for the ${contentType} format to maximize reach and algorithm push.\n- DO NOT use markdown tables or HTML tags (like <br>). Use standard plain text paragraphs, spacing, and emojis so it is ready to be copied and pasted directly to social media.`;
        userPrompt = `Write a compelling ${contentType} for ${targetProfile} based on the following topics. You can combine them or focus on the most interesting aspects:\n\n${briefText}`;
     }
 
