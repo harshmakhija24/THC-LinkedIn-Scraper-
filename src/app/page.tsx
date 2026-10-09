@@ -43,14 +43,21 @@ export default function Home() {
         setSavedDraftsList(JSON.parse(savedDrafts));
       } catch (e) {}
     }
+    const savedTargetProfile = localStorage.getItem('target_profile');
+    if (savedTargetProfile !== null) {
+      setTargetProfile(savedTargetProfile);
+    } else {
+      setTargetProfile('https://www.linkedin.com/in/parul-aggarwal-833bbb170/');
+    }
     setIsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem('saved_urls', JSON.stringify(sources));
+      localStorage.setItem('target_profile', targetProfile);
     }
-  }, [sources, isLoaded]);
+  }, [sources, targetProfile, isLoaded]);
 
   const handleUrlChange = (index: number, value: string) => {
     const newSources = [...sources];
