@@ -28,6 +28,7 @@ export default function Home() {
   const [expandedBriefs, setExpandedBriefs] = useState<(number | string)[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputMode, setInputMode] = useState<'scrape' | 'manual'>('scrape');
+  const [briefSourceFilter, setBriefSourceFilter] = useState('All');
 
   useEffect(() => {
     const initSources = async () => {
@@ -187,6 +188,21 @@ export default function Home() {
     setSelectedBriefs(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   };
 
+  const handleSelectAllBriefs = () => {
+    const allBriefs = [...manualPosts, ...scrapedData];
+    const filteredBriefs = briefSourceFilter === 'All' ? allBriefs : allBriefs.filter(b => (b.source || 'Unknown') === briefSourceFilter);
+    const filteredIds = filteredBriefs.map(b => b.id);
+    
+    // If all filtered are already selected, deselect them. Otherwise select them.
+    const allSelected = filteredIds.length > 0 && filteredIds.every(id => selectedBriefs.includes(id));
+    
+    if (allSelected) {
+      setSelectedBriefs(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      setSelectedBriefs(prev => [...new Set([...prev, ...filteredIds])]);
+    }
+  };
+
   const handleToggleExpandBrief = (e: React.MouseEvent, id: number | string) => {
     e.stopPropagation();
     setExpandedBriefs(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
@@ -255,6 +271,10 @@ export default function Home() {
       }
       return true;
     });
+
+  const allBriefsForRender = [...manualPosts, ...scrapedData];
+  const uniqueBriefSources = ['All', ...new Set(allBriefsForRender.map(b => b.source || 'Unknown'))];
+  const displayedBriefs = briefSourceFilter === 'All' ? allBriefsForRender : allBriefsForRender.filter(b => (b.source || 'Unknown') === briefSourceFilter);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
@@ -514,6 +534,33 @@ export default function Home() {
                 )}
               </div>
               
+              {(scrapedData.length > 0 || manualPosts.length > 0) && (
+                <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox"
+                      checked={displayedBriefs.length > 0 && displayedBriefs.every(b => selectedBriefs.includes(b.id))}
+                      onChange={handleSelectAllBriefs}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-slate-600 cursor-pointer" onClick={handleSelectAllBriefs}>Select All</span>
+                  </div>
+                  <div className="relative w-1/2">
+                    <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <select 
+                      value={briefSourceFilter}
+                      onChange={(e) => setBriefSourceFilter(e.target.value)}
+                      className="w-full pl-9 pr-10 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white cursor-pointer"
+                    >
+                      {uniqueBriefSources.map(src => (
+                        <option key={src} value={src}>{src === 'All' ? 'All Sources' : src}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
                 {scrapedData.length === 0 && manualPosts.length === 0 && !isLoading && (
                   <div className="py-8 flex flex-col items-center justify-center text-slate-400 space-y-3">
@@ -522,7 +569,7 @@ export default function Home() {
                   </div>
                 )}
                 
-                {[...manualPosts, ...scrapedData].map((brief) => (
+                {displayedBriefs.map((brief) => (
                   <div 
                     key={brief.id} 
                     className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedBriefs.includes(brief.id) ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'} ${brief.isManual ? 'border-dashed' : ''}`}
