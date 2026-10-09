@@ -292,21 +292,20 @@ export default function Home() {
               <div className="flex gap-6 border-b border-slate-200 mb-6 pb-2">
                 <button 
                   onClick={() => setInputMode('scrape')}
-                  className={`font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'scrape' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                  className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'scrape' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
                 >
-                  Automated Scraping
+                  1. Automated Scraping
                 </button>
                 <button 
                   onClick={() => setInputMode('manual')}
-                  className={`font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'manual' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                  className={`text-lg font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'manual' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
                 >
-                  Manual Entry
+                  1. Manual Entry
                 </button>
               </div>
 
               {inputMode === 'scrape' ? (
                 <>
-                  <h2 className="text-lg font-semibold mb-4">1. Add Newsletters / LinkedIn Profiles</h2>
                   <div className="space-y-4 mb-4 max-h-[22rem] overflow-y-auto pr-2">
                     {sources.map((source, idx) => (
                       <div key={idx} className={`flex gap-3 relative bg-slate-50 p-3 rounded-lg border ${source.selected ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-100 opacity-60'}`}>
@@ -407,9 +406,6 @@ export default function Home() {
                 </>
               ) : (
                 <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-slate-700">Add Manual Post</h3>
-                  </div>
                   <div className="flex gap-2">
                     <select 
                       value={manualType}
@@ -483,9 +479,27 @@ export default function Home() {
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-              <h2 className="text-lg font-semibold mb-4">3. Select a Topic Brief</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">3. Select a Topic Brief</h2>
+                {(scrapedData.length > 0 || manualPosts.length > 0) && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleGenerateContent('summary')}
+                      className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+                    >
+                      Summarize Selected
+                    </button>
+                    <button 
+                      onClick={() => handleGenerateContent('post')}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors"
+                    >
+                      Draft Post
+                    </button>
+                  </div>
+                )}
+              </div>
               
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
                 {scrapedData.length === 0 && manualPosts.length === 0 && !isLoading && (
                   <div className="py-8 flex flex-col items-center justify-center text-slate-400 space-y-3">
                     <Search className="w-12 h-12 text-slate-300" />
@@ -561,22 +575,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {scrapedData.length > 0 && (
-                <div className="pt-4 border-t border-slate-200 mt-4 flex gap-3">
-                  <button 
-                    onClick={() => handleGenerateContent('summary')}
-                    className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Summarize Selected
-                  </button>
-                  <button 
-                    onClick={() => handleGenerateContent('post')}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Draft Post
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
