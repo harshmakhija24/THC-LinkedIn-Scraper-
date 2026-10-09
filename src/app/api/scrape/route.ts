@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     // The actor takes 'profileUrls' and other configurations
     const run = await client.actor("curious_coder/linkedin-profile-scraper").call({
       urls: profileUrls,
-      cookie: process.env.LINKEDIN_COOKIE || "MISSING_COOKIE",
+      cookie: process.env.LINKEDIN_COOKIE ? JSON.parse(process.env.LINKEDIN_COOKIE) : [],
       userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       proxy: { useApifyProxy: true },
       maxItems: 10, // General safety limit for the run
