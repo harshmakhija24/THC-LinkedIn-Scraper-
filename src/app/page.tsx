@@ -262,8 +262,8 @@ export default function Home() {
                           className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
+                      <div className="flex flex-col gap-3">
+                        <div className="relative w-full">
                           <Type className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <input 
                             type="text" 
@@ -273,7 +273,7 @@ export default function Home() {
                             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
                           />
                         </div>
-                        <div className="flex gap-2 w-[22rem] shrink-0 relative">
+                        <div className="flex gap-2 w-full relative">
                           <select 
                             value={source.type || 'LinkedIn Profile'} 
                             onChange={(e) => {
@@ -281,7 +281,7 @@ export default function Home() {
                               newSources[idx].type = e.target.value;
                               setSources(newSources);
                             }}
-                            className="w-1/2 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                             title="Source Type"
                           >
                             <option value="LinkedIn Profile">LinkedIn Profile</option>
@@ -296,7 +296,7 @@ export default function Home() {
                               newSources[idx].scrapeCount = e.target.value;
                               setSources(newSources);
                             }}
-                            className="w-1/2 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                             title="Number of posts to fetch"
                           >
                             <option value="1">Latest Post</option>
@@ -316,7 +316,7 @@ export default function Home() {
                                 newSources[idx].customScrapeCount = e.target.value;
                                 setSources(newSources);
                               }}
-                              className="w-20 absolute right-0 top-0 h-full px-2 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                              className="w-24 px-2 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
                             />
                           )}
                         </div>
