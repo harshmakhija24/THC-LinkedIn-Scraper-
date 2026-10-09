@@ -9,7 +9,12 @@ export default function Home() {
   const [contentType, setContentType] = useState('LinkedIn Post');
   const [isLoading, setIsLoading] = useState(false);
   const [scrapedData, setScrapedData] = useState<any[]>([]);
-  const [selectedBriefs, setSelectedBriefs] = useState<number[]>([]);
+  const [manualPosts, setManualPosts] = useState<any[]>([]);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualText, setManualText] = useState('');
+  const [manualAuthor, setManualAuthor] = useState('');
+  
+  const [selectedBriefs, setSelectedBriefs] = useState<(number | string)[]>([]);
   const [draft, setDraft] = useState('');
   const [isDrafting, setIsDrafting] = useState(false);
 
@@ -18,7 +23,7 @@ export default function Home() {
   const [dbSearchQuery, setDbSearchQuery] = useState('');
   const [dbTypeFilter, setDbTypeFilter] = useState('All');
   const [dbStatusFilter, setDbStatusFilter] = useState('All');
-  const [expandedBriefs, setExpandedBriefs] = useState<number[]>([]);
+  const [expandedBriefs, setExpandedBriefs] = useState<(number | string)[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -37,6 +42,13 @@ export default function Home() {
               setSources(parsed.map((s: any) => ({...s, selected: s.selected !== false, scrapeCount: s.scrapeCount || '1', customScrapeCount: s.customScrapeCount || '', type: s.type || 'LinkedIn Profile'})));
             }
           }
+        }
+        
+        // Fetch manual posts
+        const manualRes = await fetch('/api/manual-posts');
+        const manualData = await manualRes.json();
+        if (manualData.posts) {
+          setManualPosts(manualData.posts);
         }
       } catch (e) {
         console.error("Failed to fetch sources from DB", e);
@@ -71,8 +83,15 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sources })
       }).catch(console.error);
+
+      // Save manual posts
+      fetch('/api/manual-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: manualPosts })
+      }).catch(console.error);
     }
-  }, [sources, targetProfile, isLoaded]);
+  }, [sources, manualPosts, targetProfile, isLoaded]);
 
   const handleUrlChange = (index: number, value: string) => {
     const newSources = [...sources];
@@ -120,11 +139,34 @@ export default function Home() {
     setIsLoading(false);
   };
 
-  const handleToggleBrief = (id: number) => {
+  const handleAddManualPost = () => {
+    if (!manualText.trim()) return;
+    const newPost = {
+      id: `manual_${Date.now()}`,
+      isManual: true,
+      source: manualAuthor || 'Manual Entry',
+      title: `Manual Post - ${new Date().toLocaleDateString()}`,
+      summary: manualText.substring(0, 200) + '...',
+      originalText: manualText,
+      dateAdded: new Date().toLocaleString()
+    };
+    setManualPosts([newPost, ...manualPosts]);
+    setManualText('');
+    setManualAuthor('');
+    setShowManualInput(false);
+  };
+
+  const handleRemoveManualPost = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setManualPosts(manualPosts.filter(p => p.id !== id));
+    setSelectedBriefs(selectedBriefs.filter(b => b !== id));
+  };
+
+  const handleToggleBrief = (id: number | string) => {
     setSelectedBriefs(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   };
 
-  const handleToggleExpandBrief = (e: React.MouseEvent, id: number) => {
+  const handleToggleExpandBrief = (e: React.MouseEvent, id: number | string) => {
     e.stopPropagation();
     setExpandedBriefs(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   };
@@ -138,7 +180,8 @@ export default function Home() {
       alert("Please paste the LinkedIn Profile URL of the author before generating a post.");
       return;
     }
-    const briefsToUse = scrapedData.filter(b => selectedBriefs.includes(b.id));
+    const allBriefs = [...manualPosts, ...scrapedData];
+    const briefsToUse = allBriefs.filter(b => selectedBriefs.includes(b.id));
     setIsDrafting(true);
     try {
       const res = await fetch('/api/generate', {
@@ -161,7 +204,8 @@ export default function Home() {
 
   const handleSaveDraft = () => {
     if (!draft) return;
-    const firstBrief = scrapedData.find(b => selectedBriefs.includes(b.id));
+    const allBriefs = [...manualPosts, ...scrapedData];
+    const firstBrief = allBriefs.find(b => selectedBriefs.includes(b.id));
     const newDrafts = [...savedDraftsList, {
       title: firstBrief?.title || 'Custom Draft',
       content: draft,
@@ -336,6 +380,42 @@ export default function Home() {
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Analyze"}
                 </button>
               </div>
+
+              {/* Manual Input Section */}
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                {!showManualInput ? (
+                  <button onClick={() => setShowManualInput(true)} className="text-sm text-slate-500 hover:text-indigo-600 flex items-center gap-1">
+                    <Type className="w-4 h-4" /> Paste a post manually (Fallback)
+                  </button>
+                ) : (
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium text-sm text-slate-700">Add Manual Post</h3>
+                      <button onClick={() => setShowManualInput(false)} className="text-slate-400 hover:text-red-500">✕</button>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="Author Name / Link (Optional)"
+                      value={manualAuthor}
+                      onChange={(e) => setManualAuthor(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <textarea
+                      placeholder="Paste the post content here..."
+                      value={manualText}
+                      onChange={(e) => setManualText(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px] resize-y"
+                    />
+                    <button 
+                      onClick={handleAddManualPost}
+                      disabled={!manualText.trim()}
+                      className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      Save Manual Post
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -371,17 +451,17 @@ export default function Home() {
               <h2 className="text-lg font-semibold mb-4">3. Select a Topic Brief</h2>
               
               <div className="space-y-4">
-                {scrapedData.length === 0 && !isLoading && (
+                {scrapedData.length === 0 && manualPosts.length === 0 && !isLoading && (
                   <div className="py-8 flex flex-col items-center justify-center text-slate-400 space-y-3">
                     <Search className="w-12 h-12 text-slate-300" />
-                    <p>Scrape a profile to see extracted topics here.</p>
+                    <p>Scrape a profile or add manual posts to see extracted topics here.</p>
                   </div>
                 )}
                 
-                {scrapedData.map((brief) => (
+                {[...manualPosts, ...scrapedData].map((brief) => (
                   <div 
                     key={brief.id} 
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedBriefs.includes(brief.id) ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${selectedBriefs.includes(brief.id) ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'} ${brief.isManual ? 'border-dashed' : ''}`}
                     onClick={() => handleToggleBrief(brief.id)}
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -393,12 +473,27 @@ export default function Home() {
                           className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" 
                         />
                         <h3 className="font-semibold text-slate-900">{brief.title}</h3>
+                        {brief.isManual && <span className="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded font-medium">Manual</span>}
                       </div>
                       <div className="flex items-center gap-2">
+                        {brief.dateAdded && (
+                          <div className="text-xs text-slate-500 font-medium flex items-center gap-1 shrink-0">
+                            {brief.dateAdded}
+                          </div>
+                        )}
                         {brief.impressions && (
                           <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium flex items-center gap-1 shrink-0">
                             📈 {brief.impressions.toLocaleString()} views
                           </div>
+                        )}
+                        {brief.isManual && (
+                          <button 
+                            onClick={(e) => handleRemoveManualPost(e, brief.id)}
+                            className="p-1 hover:bg-red-100 hover:text-red-600 rounded text-slate-400 transition-colors"
+                            title="Delete manual post"
+                          >
+                            ✕
+                          </button>
                         )}
                         <button 
                           onClick={(e) => handleToggleExpandBrief(e, brief.id)}
