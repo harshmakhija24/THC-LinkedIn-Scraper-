@@ -22,21 +22,28 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const savedUrls = localStorage.getItem('saved_urls');
-    if (savedUrls) {
+    const initSources = async () => {
       try {
-        const parsed = JSON.parse(savedUrls);
-        if (parsed.length > 0) {
-          if (typeof parsed[0] === 'string') {
-            setSources(parsed.map((u: string) => ({url: u, name: '', selected: true, scrapeCount: '1'})));
-          } else {
-            setSources(parsed.map((s: any) => ({...s, selected: s.selected !== false, scrapeCount: s.scrapeCount || '1', customScrapeCount: s.customScrapeCount || '', type: s.type || 'LinkedIn Profile'})));
+        const res = await fetch('/api/sources');
+        const data = await res.json();
+        if (data.sources && data.sources.length > 0) {
+          setSources(data.sources);
+        } else {
+          // Fallback to local storage if DB is empty (migrating old local data)
+          const savedUrls = localStorage.getItem('saved_urls');
+          if (savedUrls) {
+            const parsed = JSON.parse(savedUrls);
+            if (parsed.length > 0) {
+              setSources(parsed.map((s: any) => ({...s, selected: s.selected !== false, scrapeCount: s.scrapeCount || '1', customScrapeCount: s.customScrapeCount || '', type: s.type || 'LinkedIn Profile'})));
+            }
           }
         }
       } catch (e) {
-        // Ignore JSON error
+        console.error("Failed to fetch sources from DB", e);
       }
-    }
+    };
+    initSources();
+
     const savedDrafts = localStorage.getItem('saved_drafts');
     if (savedDrafts) {
       try {
@@ -56,6 +63,13 @@ export default function Home() {
     if (isLoaded) {
       localStorage.setItem('saved_urls', JSON.stringify(sources));
       localStorage.setItem('target_profile', targetProfile);
+      
+      // Save sources to cloud DB globally
+      fetch('/api/sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sources })
+      }).catch(console.error);
     }
   }, [sources, targetProfile, isLoaded]);
 
