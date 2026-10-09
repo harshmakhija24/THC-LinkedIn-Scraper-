@@ -27,6 +27,7 @@ export default function Home() {
   const [dbStatusFilter, setDbStatusFilter] = useState('All');
   const [expandedBriefs, setExpandedBriefs] = useState<(number | string)[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [inputMode, setInputMode] = useState<'scrape' | 'manual'>('scrape');
 
   useEffect(() => {
     const initSources = async () => {
@@ -158,7 +159,8 @@ export default function Home() {
     setManualAuthor('');
     setManualTitle('');
     setManualType('Newsletter');
-    setShowManualInput(false);
+    // Optional: Switch back to scrape mode if desired, but they might want to add more
+    // setInputMode('scrape'); 
   };
 
   const handleRemoveManualPost = (e: React.MouseEvent, id: string) => {
@@ -287,159 +289,168 @@ export default function Home() {
           {/* Left Column: Scraping & Briefs */}
           <div className="w-1/2 flex flex-col gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-lg font-semibold mb-4">1. Add Newsletters / LinkedIn Profiles</h2>
-              <div className="space-y-4 mb-4 max-h-[22rem] overflow-y-auto pr-2">
-                {sources.map((source, idx) => (
-                  <div key={idx} className={`flex gap-3 relative bg-slate-50 p-3 rounded-lg border ${source.selected ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-100 opacity-60'}`}>
-                    <div className="pt-2 pl-1">
-                      <input 
-                        type="checkbox" 
-                        checked={source.selected} 
-                        onChange={() => handleToggleSelect(idx)}
-                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        title="Include in scrape"
-                      />
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                          type="text" 
-                          value={source.url}
-                          onChange={(e) => handleUrlChange(idx, e.target.value)}
-                          placeholder="Enter LinkedIn Profile or Newsletter URL..."
-                          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-3">
-                        <div className="relative w-full">
-                          <Type className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                          <input 
-                            type="text" 
-                            value={source.name}
-                            onChange={(e) => handleNameChange(idx, e.target.value)}
-                            placeholder="Optional: Name of this profile/newsletter..."
-                            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
-                          />
-                        </div>
-                        <div className="flex gap-2 w-full relative">
-                          <select 
-                            value={source.type || 'LinkedIn Profile'} 
-                            onChange={(e) => {
-                              const newSources = [...sources];
-                              newSources[idx].type = e.target.value;
-                              setSources(newSources);
-                            }}
-                            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                            title="Source Type"
-                          >
-                            <option value="LinkedIn Profile">LinkedIn Profile</option>
-                            <option value="Newsletter">Newsletter</option>
-                            <option value="Blog">Blog</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          <select 
-                            value={source.scrapeCount || '1'} 
-                            onChange={(e) => {
-                              const newSources = [...sources];
-                              newSources[idx].scrapeCount = e.target.value;
-                              setSources(newSources);
-                            }}
-                            className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                            title="Number of posts to fetch"
-                          >
-                            <option value="1">Latest Post</option>
-                            <option value="3">Last 3 Posts</option>
-                            <option value="5">Last 5 Posts</option>
-                            <option value="all">All Posts</option>
-                            <option value="custom">Custom...</option>
-                          </select>
-                          {source.scrapeCount === 'custom' && (
-                            <input 
-                              type="number" 
-                              min="1"
-                              placeholder="Qty"
-                              value={source.customScrapeCount || ''}
-                              onChange={(e) => {
-                                const newSources = [...sources];
-                                newSources[idx].customScrapeCount = e.target.value;
-                                setSources(newSources);
-                              }}
-                              className="w-24 px-2 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <button onClick={() => removeSource(idx)} className="px-2 self-start mt-1 text-slate-400 hover:text-red-500 transition-colors">✕</button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <button onClick={addSource} className="text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1">+ Add another link</button>
+              <div className="flex gap-6 border-b border-slate-200 mb-6 pb-2">
                 <button 
-                  onClick={handleScrape}
-                  disabled={isLoading || sources.filter(s => s.selected).every(s => !s.url.trim())}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setInputMode('scrape')}
+                  className={`font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'scrape' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
                 >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Analyze"}
+                  Automated Scraping
+                </button>
+                <button 
+                  onClick={() => setInputMode('manual')}
+                  className={`font-semibold pb-2 border-b-2 transition-colors ${inputMode === 'manual' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                >
+                  Manual Entry
                 </button>
               </div>
 
-              {/* Manual Input Section */}
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                {!showManualInput ? (
-                  <button onClick={() => setShowManualInput(true)} className="text-sm text-slate-500 hover:text-indigo-600 flex items-center gap-1">
-                    <Type className="w-4 h-4" /> Paste a post manually (Fallback)
-                  </button>
-                ) : (
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-medium text-sm text-slate-700">Add Manual Post</h3>
-                      <button onClick={() => setShowManualInput(false)} className="text-slate-400 hover:text-red-500">✕</button>
-                    </div>
-                    <div className="flex gap-2">
-                      <select 
-                        value={manualType}
-                        onChange={(e) => setManualType(e.target.value)}
-                        className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                      >
-                        <option value="Newsletter">Newsletter</option>
-                        <option value="LinkedIn Post">LinkedIn Post</option>
-                        <option value="Blog Post">Blog Post</option>
-                        <option value="Other">Other</option>
-                      </select>
-                      <input 
-                        type="text" 
-                        placeholder="Title (e.g. Health Tech #4)"
-                        value={manualTitle}
-                        onChange={(e) => setManualTitle(e.target.value)}
-                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <input 
-                      type="text" 
-                      placeholder="Author Name / Link (Optional)"
-                      value={manualAuthor}
-                      onChange={(e) => setManualAuthor(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <textarea
-                      placeholder="Paste the post content here..."
-                      value={manualText}
-                      onChange={(e) => setManualText(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px] resize-y"
-                    />
+              {inputMode === 'scrape' ? (
+                <>
+                  <h2 className="text-lg font-semibold mb-4">1. Add Newsletters / LinkedIn Profiles</h2>
+                  <div className="space-y-4 mb-4 max-h-[22rem] overflow-y-auto pr-2">
+                    {sources.map((source, idx) => (
+                      <div key={idx} className={`flex gap-3 relative bg-slate-50 p-3 rounded-lg border ${source.selected ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-100 opacity-60'}`}>
+                        <div className="pt-2 pl-1">
+                          <input 
+                            type="checkbox" 
+                            checked={source.selected} 
+                            onChange={() => handleToggleSelect(idx)}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            title="Include in scrape"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-3">
+                          <div className="relative">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input 
+                              type="text" 
+                              value={source.url}
+                              onChange={(e) => handleUrlChange(idx, e.target.value)}
+                              placeholder="Enter LinkedIn Profile or Newsletter URL..."
+                              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-3">
+                            <div className="relative w-full">
+                              <Type className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              <input 
+                                type="text" 
+                                value={source.name}
+                                onChange={(e) => handleNameChange(idx, e.target.value)}
+                                placeholder="Optional: Name of this profile/newsletter..."
+                                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow bg-white"
+                              />
+                            </div>
+                            <div className="flex gap-2 w-full relative">
+                              <select 
+                                value={source.type || 'LinkedIn Profile'} 
+                                onChange={(e) => {
+                                  const newSources = [...sources];
+                                  newSources[idx].type = e.target.value;
+                                  setSources(newSources);
+                                }}
+                                className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                title="Source Type"
+                              >
+                                <option value="LinkedIn Profile">LinkedIn Profile</option>
+                                <option value="Newsletter">Newsletter</option>
+                                <option value="Blog">Blog</option>
+                                <option value="Other">Other</option>
+                              </select>
+                              <select 
+                                value={source.scrapeCount || '1'} 
+                                onChange={(e) => {
+                                  const newSources = [...sources];
+                                  newSources[idx].scrapeCount = e.target.value;
+                                  setSources(newSources);
+                                }}
+                                className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                                title="Number of posts to fetch"
+                              >
+                                <option value="1">Latest Post</option>
+                                <option value="3">Last 3 Posts</option>
+                                <option value="5">Last 5 Posts</option>
+                                <option value="all">All Posts</option>
+                                <option value="custom">Custom...</option>
+                              </select>
+                              {source.scrapeCount === 'custom' && (
+                                <input 
+                                  type="number" 
+                                  min="1"
+                                  placeholder="Qty"
+                                  value={source.customScrapeCount || ''}
+                                  onChange={(e) => {
+                                    const newSources = [...sources];
+                                    newSources[idx].customScrapeCount = e.target.value;
+                                    setSources(newSources);
+                                  }}
+                                  className="w-24 px-2 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={() => removeSource(idx)} className="px-2 self-start mt-1 text-slate-400 hover:text-red-500 transition-colors">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <button onClick={addSource} className="text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-1">+ Add another link</button>
                     <button 
-                      onClick={handleAddManualPost}
-                      disabled={!manualText.trim()}
-                      className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                      onClick={handleScrape}
+                      disabled={isLoading || sources.filter(s => s.selected).every(s => !s.url.trim())}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Save Manual Post
+                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Scrape & Analyze"}
                     </button>
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-slate-700">Add Manual Post</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <select 
+                      value={manualType}
+                      onChange={(e) => setManualType(e.target.value)}
+                      className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    >
+                      <option value="Newsletter">Newsletter</option>
+                      <option value="LinkedIn Post">LinkedIn Post</option>
+                      <option value="Blog Post">Blog Post</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <input 
+                      type="text" 
+                      placeholder="Title (e.g. Health Tech #4)"
+                      value={manualTitle}
+                      onChange={(e) => setManualTitle(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Author Name / Link (Optional)"
+                    value={manualAuthor}
+                    onChange={(e) => setManualAuthor(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <textarea
+                    placeholder="Paste the post content here..."
+                    value={manualText}
+                    onChange={(e) => setManualText(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[150px] resize-y"
+                  />
+                  <button 
+                    onClick={handleAddManualPost}
+                    disabled={!manualText.trim()}
+                    className="w-full bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded font-medium transition-colors disabled:opacity-50"
+                  >
+                    Save Manual Post to Database
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">

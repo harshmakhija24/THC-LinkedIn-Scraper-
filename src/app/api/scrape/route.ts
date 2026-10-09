@@ -51,15 +51,20 @@ export async function POST(req: Request) {
     const { items } = await client.dataset(run.defaultDatasetId).listItems();
 
     // Transform the raw Apify output into our expected format
-    const transformedData = items.map((item: any, index: number) => ({
-      id: index + 1,
-      source: item.authorUrl || item.profileUrl || targetUrls[0],
-      title: item.title || item.authorName || `Post from ${item.authorName || 'Author'}`,
-      summary: item.text ? item.text.substring(0, 200) + '...' : (item.summary || 'No text found'),
-      impressions: item.likesCount || item.reactionsCount || Math.floor(Math.random() * 5000),
-      engagementRate: item.commentsCount ? `${item.commentsCount} comments` : "N/A",
-      originalText: item.text || item.description || JSON.stringify(item, null, 2),
-    }));
+    const transformedData = items.map((item: any, index: number) => {
+      const postText = item.text || item.content || item.description || item.postContent || '';
+      const authorName = item.authorName || item.author?.name || item.authorUrl || 'Author';
+
+      return {
+        id: index + 1,
+        source: item.authorUrl || item.profileUrl || targetUrls[0],
+        title: item.title ? item.title : `Post by ${authorName}`,
+        summary: postText ? postText.substring(0, 200) + '...' : 'No text found',
+        impressions: item.likesCount || item.reactionsCount || item.numLikes || Math.floor(Math.random() * 5000),
+        engagementRate: item.commentsCount || item.numComments ? `${item.commentsCount || item.numComments} comments` : "N/A",
+        originalText: postText || JSON.stringify(item, null, 2),
+      };
+    });
 
     // If no items returned
     if (transformedData.length === 0) {
