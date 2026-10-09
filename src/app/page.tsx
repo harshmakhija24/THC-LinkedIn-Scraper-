@@ -29,6 +29,10 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputMode, setInputMode] = useState<'scrape' | 'manual'>('scrape');
   const [briefSourceFilter, setBriefSourceFilter] = useState('All');
+  
+  const [editingDraftIndex, setEditingDraftIndex] = useState<number | null>(null);
+  const [editingDraftTitle, setEditingDraftTitle] = useState('');
+  const [editingDraftContent, setEditingDraftContent] = useState('');
 
   useEffect(() => {
     const initSources = async () => {
@@ -840,29 +844,80 @@ export default function Home() {
 
         {currentView === 'drafts' && (
           <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
-            <h2 className="text-2xl font-bold">Your Saved Drafts</h2>
-            {savedDraftsList.length === 0 ? (
-              <p className="text-slate-500">No drafts saved yet. Generate and save a draft from the Dashboard!</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-6">
-                {savedDraftsList.map((d, i) => (
-                  <div key={i} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-semibold text-slate-900">{d.title}</h3>
-                      <span className="text-xs text-slate-400">{d.date}</span>
-                    </div>
-                    <p className="text-sm text-slate-600 flex-1 whitespace-pre-wrap">{d.content.substring(0, 150)}...</p>
-                    <div className="mt-4 flex justify-end gap-3 border-t border-slate-100 pt-4">
-                      <button onClick={() => { navigator.clipboard.writeText(d.content); alert('Copied!'); }} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Copy Full Post</button>
-                      <button onClick={() => {
-                        const updated = savedDraftsList.filter((_, idx) => idx !== i);
+            {editingDraftIndex !== null ? (
+              <div className="flex flex-col h-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                  <input 
+                    type="text" 
+                    value={editingDraftTitle}
+                    onChange={(e) => setEditingDraftTitle(e.target.value)}
+                    className="text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 focus:outline-none px-2 py-1 w-1/2"
+                    placeholder="Draft Title"
+                  />
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setEditingDraftIndex(null)}
+                      className="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const updated = [...savedDraftsList];
+                        updated[editingDraftIndex] = {
+                            ...updated[editingDraftIndex],
+                            title: editingDraftTitle,
+                            content: editingDraftContent,
+                            date: new Date().toLocaleString()
+                        };
                         setSavedDraftsList(updated);
                         localStorage.setItem('saved_drafts', JSON.stringify(updated));
-                      }} className="text-sm font-medium text-red-600 hover:text-red-800">Delete</button>
-                    </div>
+                        setEditingDraftIndex(null);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Save Changes
+                    </button>
                   </div>
-                ))}
+                </div>
+                <textarea 
+                  className="flex-1 w-full p-6 focus:outline-none resize-none text-slate-700 leading-relaxed font-sans"
+                  value={editingDraftContent}
+                  onChange={(e) => setEditingDraftContent(e.target.value)}
+                />
               </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold">Your Saved Drafts</h2>
+                {savedDraftsList.length === 0 ? (
+                  <p className="text-slate-500">No drafts saved yet. Generate and save a draft from the Dashboard!</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-6">
+                    {savedDraftsList.map((d, i) => (
+                      <div key={i} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-semibold text-slate-900">{d.title}</h3>
+                          <span className="text-xs text-slate-400">{d.date}</span>
+                        </div>
+                        <p className="text-sm text-slate-600 flex-1 whitespace-pre-wrap">{d.content.substring(0, 150)}...</p>
+                        <div className="mt-4 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                          <button onClick={() => {
+                            setEditingDraftIndex(i);
+                            setEditingDraftTitle(d.title);
+                            setEditingDraftContent(d.content);
+                          }} className="text-sm font-medium text-indigo-600 hover:text-indigo-800">Edit</button>
+                          <button onClick={() => { navigator.clipboard.writeText(d.content); alert('Copied!'); }} className="text-sm font-medium text-slate-600 hover:text-slate-900">Copy</button>
+                          <button onClick={() => {
+                            const updated = savedDraftsList.filter((_, idx) => idx !== i);
+                            setSavedDraftsList(updated);
+                            localStorage.setItem('saved_drafts', JSON.stringify(updated));
+                          }} className="text-sm font-medium text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
