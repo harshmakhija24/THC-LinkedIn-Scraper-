@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     // Validate URLs and dynamically configure maxPosts
-    const targetUrls = [];
+    const targetUrls: string[] = [];
     let maxPostsToScrape = 1;
 
     for (const t of targets) {
