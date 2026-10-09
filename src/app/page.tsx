@@ -477,17 +477,18 @@ export default function Home() {
                   />
                 </div>
                 <div className="relative">
-                  <Type className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Type className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <select
                     value={contentType}
                     onChange={(e) => setContentType(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow appearance-none"
+                    className="w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow appearance-none bg-white cursor-pointer"
                   >
                     <option value="LinkedIn Post">LinkedIn Post</option>
                     <option value="Newsletter Issue">Newsletter Issue</option>
                     <option value="Twitter Thread">Twitter Thread</option>
                     <option value="Blog Post">Blog Post</option>
                   </select>
+                  <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
               </div>
             </div>
