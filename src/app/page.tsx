@@ -53,6 +53,13 @@ export default function Home() {
         if (manualData.posts) {
           setManualPosts(manualData.posts);
         }
+        
+        // Fetch last scraped data
+        const scrapedRes = await fetch('/api/scraped-data');
+        const scrapedDataResult = await scrapedRes.json();
+        if (scrapedDataResult.data) {
+          setScrapedData(scrapedDataResult.data);
+        }
       } catch (e) {
         console.error("Failed to fetch sources from DB", e);
       } finally {
@@ -93,8 +100,15 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ posts: manualPosts })
       }).catch(console.error);
+
+      // Save scraped data
+      fetch('/api/scraped-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: scrapedData })
+      }).catch(console.error);
     }
-  }, [sources, manualPosts, targetProfile, isLoaded]);
+  }, [sources, manualPosts, scrapedData, targetProfile, isLoaded]);
 
   const handleUrlChange = (index: number, value: string) => {
     const newSources = [...sources];
