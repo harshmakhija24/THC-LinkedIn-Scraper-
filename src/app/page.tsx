@@ -14,10 +14,11 @@ export default function Home() {
   const [manualText, setManualText] = useState('');
   const [manualAuthor, setManualAuthor] = useState('');
   const [manualTitle, setManualTitle] = useState('');
-  const [manualType, setManualType] = useState('Newsletter');
+  const [manualType, setManualType] = useState('LinkedIn Post');
   
   const [selectedBriefs, setSelectedBriefs] = useState<(number | string)[]>([]);
   const [draft, setDraft] = useState('');
+  const [draftVariations, setDraftVariations] = useState<string[]>([]);
   const [isDrafting, setIsDrafting] = useState(false);
 
   const [currentView, setCurrentView] = useState('dashboard');
@@ -183,7 +184,7 @@ export default function Home() {
     setManualText('');
     setManualAuthor('');
     setManualTitle('');
-    setManualType('Newsletter');
+    setManualType('LinkedIn Post');
     // Optional: Switch back to scrape mode if desired, but they might want to add more
     // setInputMode('scrape'); 
   };
@@ -249,13 +250,43 @@ export default function Home() {
     setIsDrafting(false);
   };
 
-  const handleSaveDraft = () => {
-    if (!draft) return;
+  const handleGenerateVariations = async () => {
+    if (!draft.trim()) {
+      alert("Please write a draft first before generating variations.");
+      return;
+    }
+    if (!targetProfile.trim()) {
+      alert("Please paste the LinkedIn Profile URL of the author before generating variations.");
+      return;
+    }
+    setIsDrafting(true);
+    try {
+      const briefsToUse = [{ id: 'raw_draft', title: 'Raw Draft', source: 'Manual', summary: 'User generated raw draft.', originalText: draft }];
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ briefs: briefsToUse, targetProfile, contentType, generateType: 'variations' })
+      });
+      const data = await res.json();
+      if (data.variations) {
+        setDraftVariations(data.variations);
+      } else {
+        alert("Error generating variations.");
+      }
+    } catch (error) {
+      console.error("Failed to generate variations", error);
+      alert("An error occurred during generation.");
+    }
+    setIsDrafting(false);
+  };
+
+  const handleSaveDraft = (contentToSave: string = draft) => {
+    if (!contentToSave) return;
     const allBriefs = [...manualPosts, ...scrapedData];
     const firstBrief = allBriefs.find(b => selectedBriefs.includes(b.id));
     const newDrafts = [...savedDraftsList, {
-      title: firstBrief?.title || 'Custom Draft',
-      content: draft,
+      title: draftVariations.length > 0 ? 'AI Variation Draft' : (firstBrief?.title || 'Custom Draft'),
+      content: contentToSave,
       date: new Date().toLocaleString()
     }];
     setSavedDraftsList(newDrafts);
@@ -263,8 +294,8 @@ export default function Home() {
     alert('Draft saved to Saved Drafts!');
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(draft);
+  const handleCopy = (contentToCopy: string = draft) => {
+    navigator.clipboard.writeText(contentToCopy);
     alert('Copied to clipboard!');
   };
 
@@ -456,8 +487,8 @@ export default function Home() {
                       onChange={(e) => setManualType(e.target.value)}
                       className="px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                     >
-                      <option value="Newsletter">Newsletter</option>
                       <option value="LinkedIn Post">LinkedIn Post</option>
+                      <option value="Newsletter">Newsletter</option>
                       <option value="Blog Post">Blog Post</option>
                       <option value="Other">Other</option>
                     </select>
@@ -657,12 +688,17 @@ export default function Home() {
                   <PenTool className="w-5 h-5 text-indigo-500" /> 
                   4. Writer's Workspace & AI Content
                 </h2>
-                <div className="text-xs font-medium bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
-                  Editor
-                </div>
+                {draftVariations.length > 0 && (
+                  <button 
+                    onClick={() => setDraftVariations([])}
+                    className="text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Back to Original Draft
+                  </button>
+                )}
               </div>
               
-              <div className="flex-1 p-6 flex flex-col relative">
+              <div className="flex-1 p-6 flex flex-col relative overflow-y-auto">
                 {isDrafting ? (
                   <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center space-y-4">
                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
@@ -670,37 +706,68 @@ export default function Home() {
                   </div>
                 ) : null}
 
-                {!draft && !isDrafting ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-3">
-                    <PenTool className="w-12 h-12 text-slate-300" />
-                    <p>Write your own post here, or use the AI buttons on the left.</p>
-                  </div>
+                {draftVariations.length === 0 ? (
+                  <>
+                    <textarea 
+                      className="flex-1 w-full p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-slate-700 leading-relaxed bg-slate-50 min-h-[300px]"
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Write your own post here, or use the AI buttons on the left..."
+                    />
+                  </>
                 ) : (
-                  <textarea 
-                    className="flex-1 w-full p-4 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none text-slate-700 leading-relaxed bg-slate-50"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Write or edit your content here..."
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                    {draftVariations.map((variation, index) => (
+                      <div key={index} className="flex flex-col border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                        <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex justify-between items-center">
+                          <span className="text-sm font-semibold text-slate-700">Variation {index + 1}</span>
+                          <div className="flex gap-2">
+                            <button onClick={() => handleCopy(variation)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Copy</button>
+                            <button onClick={() => handleSaveDraft(variation)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Save</button>
+                          </div>
+                        </div>
+                        <textarea 
+                          className="flex-1 p-3 bg-transparent text-sm text-slate-700 leading-relaxed focus:outline-none resize-none min-h-[200px]"
+                          value={variation}
+                          onChange={(e) => {
+                            const newVars = [...draftVariations];
+                            newVars[index] = e.target.value;
+                            setDraftVariations(newVars);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-              <button 
-                onClick={handleSaveDraft}
-                disabled={!draft || isDrafting}
-                className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-              >
-                Save Draft
-              </button>
-              <button 
-                onClick={handleCopy}
-                disabled={!draft || isDrafting}
-                className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-              >
-                Copy for LinkedIn
-              </button>
-            </div>
+            {draftVariations.length === 0 && (
+              <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between gap-3 items-center">
+                <button 
+                  onClick={handleGenerateVariations}
+                  disabled={!draft || isDrafting}
+                  className="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> Enhance with AI (4 Variations)
+                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleSaveDraft(draft)}
+                    disabled={!draft || isDrafting}
+                    className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    Save Draft
+                  </button>
+                  <button 
+                    onClick={() => handleCopy(draft)}
+                    disabled={!draft || isDrafting}
+                    className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    Copy for LinkedIn
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           </div>
