@@ -72,7 +72,7 @@ CRITICAL FORMATTING RULES:
           content: userPrompt
         }
       ],
-      model: "llama3-70b-8192",
+      model: "llama-3.3-70b-versatile",
     });
 
     let draft = completion.choices[0]?.message?.content || "";
